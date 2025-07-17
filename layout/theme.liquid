@@ -81,7 +81,7 @@
     -%}
 
     <!-- Accessibility -->
-    <script>
+    {% comment %}<script>
     window.args = {
     	sitekey   : '337d4ccef58cbbf56215e3937b6aff73',
     	position  : 'Right',
@@ -130,7 +130,7 @@
     	},
     	exclude : []
     };
-    
+
     (function(doc, head, body){
     	var embed = doc.createElement('script');
     	embed.src = window.args['access'] + '/js/';
@@ -139,7 +139,7 @@
     	embed.setAttribute('data-cfasync', true );
     	body? body.appendChild(embed) : head.appendChild(embed);
     })(document, document.head, document.body);
-    </script>
+    </script>{% endcomment %}
     {{ 'swiper-bundle.min.js' | asset_url | script_tag }}
   </body>
 </html>

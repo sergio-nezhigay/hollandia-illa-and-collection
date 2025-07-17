@@ -1,19 +1,29 @@
-{% comment %}demo tag filtering content generating code {% endcomment %}
+{% if product.compare_at_price > product.price %}
+  {% assign on_sale = true %}
+  {% assign discount_percentage = product.compare_at_price
+    | minus: product.price
+    | times: 100
+    | divided_by: product.compare_at_price
+    | round
+  %}
+{% endif %}
 
-{%- assign all_tags = 'modern,classic,luxury,sale' | split: ',' -%}
-{%- assign tag_count = all_tags | size -%}
-{%- assign selected_tags = '' -%}
+{% assign reviews_count = product.metafields.custom.reviews_count | default: 0 %}
 
-{%- for i in (1..3) -%}
-  {%- assign random_index = 'now' | date: '%N' | slice: i | plus: 0 | modulo: tag_count -%}
-  {%- assign random_tag = all_tags[random_index] -%}
-  {%- unless selected_tags contains random_tag -%}
-    {%- assign selected_tags = selected_tags | append: random_tag | append: ' ' -%}
-  {%- endunless -%}
-{%- endfor -%}
-<div class="product-card" data-category="{{ selected_tags | strip }}">
-  {% comment %}real code to be used in     {% endcomment %}
-  {% comment %}<div class="product-card" data-category="{{ product.tags | join: ' ' | downcase }}">{% endcomment %}
+{% assign rating = 0 %}
+{% if reviews_count and reviews_count != blank and reviews_count != '' %}
+  {% assign reviews_count_num = reviews_count | plus: 0 %}
+  {% if reviews_count_num > 0 %}
+    {% assign rating_seed = product.id | modulo: 11 %}
+    {% assign rating_decimal = rating_seed | times: 0.1 %}
+    {% assign rating = 4.0 | plus: rating_decimal %}
+    {% if rating > 5.0 %}
+      {% assign rating = 5.0 %}
+    {% endif %}
+  {% endif %}
+{% endif %}
+
+<div class="product-card" data-category="{{ product.tags | join: ' ' | downcase }}">
   <a href="{{ product.url }}" class="product-card-link">
     <div class="collection-product-image-wrapper">
       {% if product.featured_image %}
@@ -26,13 +36,13 @@
         >
       {% endif %}
 
-      {% if product.compare_at_price > product.price %}
+      {% if on_sale %}
         <span class="sale-badge">במבצע</span>
       {% endif %}
 
       <div class="size-badge">
         <div class="size-icon">
-          <span class="size-label">sdrtyh</span>
+          <span class="size-label">גובה</span>
           {% render 'icon--ruler' %}
         </div>
         <span class="size-text">13 ס״מ</span>
@@ -53,15 +63,18 @@
 
       <div class="product-rating">
         <div class="stars">
-          <span class="star filled">★</span>
-          <span class="star filled">★</span>
-          <span class="star filled">★</span>
-          <span class="star filled">★</span>
-          <span class="star bordered">★</span>
+          {% assign rounded_rating = rating | round %}
+          {% for i in (1..5) %}
+            {% if i <= rounded_rating %}
+              <span class="star filled">★</span>
+            {% else %}
+              <span class="star bordered">★</span>
+            {% endif %}
+          {% endfor %}
         </div>
 
         <span class="rating-value">
-          {{ product.id | modulo: 10 | divided_by: 2.0 | plus: 1 }}
+          {{ rating | round: 1 }}
         </span>
 
         <span class="rating-count">({{ product.id | modulo: 50 | plus: 10 }})</span>
@@ -70,7 +83,9 @@
       <div class="sold-save-container">
         <div class="sold-save-icons">
           {% render 'icon--tag' %}
-          <span class="save-text">Save 18%</span>
+          {% if on_sale %}
+            <span class="save-text">Save {{ discount_percentage }}%</span>
+          {% endif %}
           <div class="checkmark-icon">{% render 'icon--checkmark' %}</div>
 
           <span class="sold-text">משלוח חינם</span>

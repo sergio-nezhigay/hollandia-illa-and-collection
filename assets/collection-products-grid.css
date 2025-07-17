@@ -241,7 +241,7 @@
 @media (max-width: 768px) {
   .collection-products-grid {
     margin: 0 auto;
-    padding: 0 12px 30px;
+    padding: 0 0 30px;
   }
   .filter-tabs {
     padding: 16px 0 22px;
