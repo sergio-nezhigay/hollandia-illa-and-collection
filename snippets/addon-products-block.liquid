@@ -1,0 +1,417 @@
+{{ 'addon-products-block.css' | asset_url | stylesheet_tag }}
+
+{% assign addon_products_handles = product.metafields.custom.add_on_products %}
+{% assign addon_products_list = null %}
+
+{% if addon_products_handles %}
+  {% if addon_products_handles.value %}
+    {% assign addon_products_list = addon_products_handles.value %}
+  {% else %}
+    {% assign addon_products_list = addon_products_handles %}
+  {% endif %}
+{% endif %}
+
+{% unless addon_products_list and addon_products_list.size > 0 %}
+  {% assign test_products = collections.all.products | limit: 3 %}
+  {% assign addon_products_list = '' %}
+  {% for test_product in test_products %}
+    {% if forloop.first %}
+      {% assign addon_products_list = test_product.handle %}
+    {% else %}
+      {% assign addon_products_list = addon_products_list | append: ',' | append: test_product.handle %}
+    {% endif %}
+  {% endfor %}
+  {% assign addon_products_list = addon_products_list | split: ',' %}
+{% endunless %}
+
+{% if addon_products_list and addon_products_list.size > 0 %}
+  <div class="addon-products-container">
+    <div class="addon-products-block" {{ block.shopify_attributes }}>
+      <div class="addon-products-header">
+        <h3 class="addon-products-title">{{ block.settings.title | default: 'השלימו את חווית השינה עם:' }}</h3>
+        
+        <div class="addon-slider-buttons">
+          <button class="addon-slider-prev" disabled>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          
+          <button class="addon-slider-next">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <div class="addon-products-slider">
+        <div class="swiper addon-products-swiper">
+          <div class="swiper-wrapper">
+            {% for product_handle in addon_products_list %}
+              {% assign addon_product = all_products[product_handle] %}
+              
+              {% if addon_product and addon_product.id %}
+                {% assign on_sale = false %}
+                {% assign discount_percentage = 0 %}
+                {% if addon_product.compare_at_price and addon_product.compare_at_price > addon_product.price %}
+                  {% assign on_sale = true %}
+                  {% assign discount_percentage = addon_product.compare_at_price | minus: addon_product.price | times: 100 | divided_by: addon_product.compare_at_price | round %}
+                {% endif %}
+                
+                <div class="swiper-slide">
+                  <div class="addon-product-item" data-product-id="{{ addon_product.id }}">
+                    <a href="{{ addon_product.url }}" class="addon-product-image">
+                      {% if addon_product.featured_image %}
+                        {{ addon_product.featured_image | image_url: width: 96 | image_tag: loading: 'lazy', alt: addon_product.title }}
+                      {% else %}
+                        <div class="addon-no-image">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke="#ccc" stroke-width="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5" stroke="#ccc" stroke-width="2"/>
+                            <path d="M21 15L16 10L5 21" stroke="#ccc" stroke-width="2"/>
+                          </svg>
+                        </div>
+                      {% endif %}
+                    </a>
+                    
+                    <div class="addon-product-info">
+                      <div class="addon-product-details">
+                        <a href="{{ addon_product.url }}" class="addon-product-title">{{ addon_product.title }}</a>
+                        
+                        <div class="addon-product-pricing">
+                          {% if on_sale %}
+                            <span class="addon-discount-badge">{{ discount_percentage }}% OFF</span>
+                          {% endif %}
+                          
+                          <div class="addon-prices">
+                            {% if on_sale %}
+                              <span class="addon-compare-price">₪{{ addon_product.compare_at_price | divided_by: 100 }}</span>
+                            {% endif %}
+                            <span class="addon-current-price">₪{{ addon_product.price | divided_by: 100 }}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <button class="addon-product-btn" data-product-handle="{{ addon_product.handle }}">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        הוסף
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="addon-variant-popup" id="addonVariantPopup">
+    <div class="addon-popup-overlay"></div>
+    <div class="addon-popup-content">
+      <button class="addon-popup-close">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+      
+      <div class="addon-popup-header">
+        <div class="addon-popup-product-image"></div>
+        <div class="addon-popup-product-info">
+          <h3 class="addon-popup-product-title"></h3>
+          <div class="addon-popup-product-pricing">
+            <span class="addon-popup-discount-badge"></span>
+            <div class="addon-popup-prices">
+              <span class="addon-popup-compare-price"></span>
+              <span class="addon-popup-current-price"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="addon-popup-variants">
+        <div class="addon-popup-description"></div>
+        
+        <h4 class="addon-variant-label">בחירת מידה:</h4>
+        
+        <div class="addon-size-options"></div>
+        
+        <div class="addon-color-section" style="display: none;">
+          <h4 class="addon-variant-label">בחירת צבע:</h4>
+          <div class="addon-color-options"></div>
+        </div>
+      </div>
+      
+      <button class="addon-popup-add-btn">הוסיפו לעגלה</button>
+    </div>
+  </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const addonBlock = document.querySelector('.addon-products-block');
+    if (!addonBlock) return;
+
+    const prevBtn = addonBlock.querySelector('.addon-slider-prev');
+    const nextBtn = addonBlock.querySelector('.addon-slider-next');
+    let addonSwiper = null;
+
+    if (document.querySelector('.addon-products-swiper')) {
+      addonSwiper = new Swiper('.addon-products-swiper', {
+        slidesPerView: 1,
+        spaceBetween: 0,
+        loop: false,
+        allowTouchMove: true,
+        watchOverflow: true,
+        on: {
+          init: function() {
+            updateSliderButtons();
+          },
+          slideChange: function() {
+            updateSliderButtons();
+          }
+        }
+      });
+
+      function updateSliderButtons() {
+        if (!addonSwiper || !prevBtn || !nextBtn) return;
+        
+        prevBtn.disabled = addonSwiper.isBeginning;
+        nextBtn.disabled = addonSwiper.isEnd;
+      }
+
+      if (prevBtn) {
+        prevBtn.addEventListener('click', function() {
+          if (addonSwiper && !this.disabled) {
+            addonSwiper.slidePrev();
+          }
+        });
+      }
+
+      if (nextBtn) {
+        nextBtn.addEventListener('click', function() {
+          if (addonSwiper && !this.disabled) {
+            addonSwiper.slideNext();
+          }
+        });
+      }
+
+      updateSliderButtons();
+    }
+
+    const addonButtons = document.querySelectorAll('.addon-product-btn');
+    const popup = document.getElementById('addonVariantPopup');
+    
+    if (!popup) return;
+    
+    const popupOverlay = popup.querySelector('.addon-popup-overlay');
+    const popupClose = popup.querySelector('.addon-popup-close');
+    const popupAddBtn = popup.querySelector('.addon-popup-add-btn');
+    
+    let currentProduct = null;
+    let selectedVariant = null;
+
+    addonButtons.forEach(button => {
+      button.addEventListener('click', async function() {
+        const productHandle = this.dataset.productHandle;
+        await loadProductData(productHandle);
+      });
+    });
+
+    async function loadProductData(handle) {
+      try {
+        const response = await fetch(`/products/${handle}.js`);
+        const product = await response.json();
+        currentProduct = product;
+        
+        if (product.variants.length === 1) {
+          selectedVariant = product.variants[0];
+          addToCart();
+        } else {
+          showVariantPopup(product);
+        }
+      } catch (error) {
+        console.error('Error loading product:', error);
+      }
+    }
+
+    function showVariantPopup(product) {
+      const popupImage = popup.querySelector('.addon-popup-product-image');
+      const popupTitle = popup.querySelector('.addon-popup-product-title');
+      const popupDescription = popup.querySelector('.addon-popup-description');
+      const sizeOptions = popup.querySelector('.addon-size-options');
+      const colorSection = popup.querySelector('.addon-color-section');
+      
+      popupImage.innerHTML = `<img src="${product.featured_image}" alt="${product.title}">`;
+      popupTitle.textContent = product.title;
+      popupDescription.innerHTML = product.description;
+      
+      updatePopupPricing(product.variants[0]);
+      
+      const colorOption = product.options.find(opt => 
+        ['color', 'colour', 'צבע', 'גוון'].includes(opt.name.toLowerCase())
+      );
+      const sizeOption = product.options.find(opt => 
+        ['size', 'גודל', 'מידה'].includes(opt.name.toLowerCase())
+      );
+      
+      if (sizeOption) {
+        renderSizeOptions(sizeOption.values, product.variants);
+      }
+      
+      if (colorOption) {
+        colorSection.style.display = 'block';
+        renderColorOptions(colorOption.values, product.variants);
+      } else {
+        colorSection.style.display = 'none';
+      }
+      
+      selectedVariant = product.variants[0];
+      popup.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function renderSizeOptions(sizes, variants) {
+      const container = popup.querySelector('.addon-size-options');
+      container.innerHTML = '';
+      
+      sizes.forEach((size, index) => {
+        const sizeBtn = document.createElement('button');
+        sizeBtn.className = `addon-size-option ${index === 0 ? 'active' : ''}`;
+        sizeBtn.textContent = size;
+        sizeBtn.dataset.size = size;
+        
+        sizeBtn.addEventListener('click', function() {
+          document.querySelectorAll('.addon-size-option').forEach(btn => btn.classList.remove('active'));
+          this.classList.add('active');
+          updateSelectedVariant();
+        });
+        
+        container.appendChild(sizeBtn);
+      });
+    }
+
+    function renderColorOptions(colors, variants) {
+      const container = popup.querySelector('.addon-color-options');
+      container.innerHTML = '';
+      
+      colors.forEach((color, index) => {
+        const colorBtn = document.createElement('button');
+        colorBtn.className = `addon-color-option ${index === 0 ? 'active' : ''}`;
+        colorBtn.innerHTML = `<div class="color-circle" data-color="${color.toLowerCase()}"></div>`;
+        colorBtn.dataset.color = color;
+        
+        colorBtn.addEventListener('click', function() {
+          document.querySelectorAll('.addon-color-option').forEach(btn => btn.classList.remove('active'));
+          this.classList.add('active');
+          updateSelectedVariant();
+        });
+        
+        container.appendChild(colorBtn);
+      });
+    }
+
+    function updateSelectedVariant() {
+      const selectedSize = popup.querySelector('.addon-size-option.active')?.dataset.size;
+      const selectedColor = popup.querySelector('.addon-color-option.active')?.dataset.color;
+      
+      const variant = currentProduct.variants.find(v => {
+        let matches = true;
+        
+        if (selectedSize) {
+          const sizeOption = currentProduct.options.findIndex(opt => 
+            ['size', 'גודל', 'מידה'].includes(opt.name.toLowerCase())
+          );
+          if (sizeOption !== -1) {
+            const variantOptionValue = v[`option${sizeOption + 1}`];
+            matches = matches && variantOptionValue === selectedSize;
+          }
+        }
+        
+        if (selectedColor) {
+          const colorOption = currentProduct.options.findIndex(opt => 
+            ['color', 'colour', 'צבע', 'גוון'].includes(opt.name.toLowerCase())
+          );
+          if (colorOption !== -1) {
+            const variantOptionValue = v[`option${colorOption + 1}`];
+            matches = matches && variantOptionValue === selectedColor;
+          }
+        }
+        
+        return matches;
+      });
+      
+      if (variant) {
+        selectedVariant = variant;
+        updatePopupPricing(variant);
+      }
+    }
+
+    function updatePopupPricing(variant) {
+      const discountBadge = popup.querySelector('.addon-popup-discount-badge');
+      const comparePrice = popup.querySelector('.addon-popup-compare-price');
+      const currentPrice = popup.querySelector('.addon-popup-current-price');
+      
+      if (variant.compare_at_price > variant.price) {
+        const discount = Math.round(((variant.compare_at_price - variant.price) / variant.compare_at_price) * 100);
+        discountBadge.textContent = `${discount}% OFF`;
+        discountBadge.style.display = 'inline';
+        comparePrice.textContent = `₪${Math.floor(variant.compare_at_price / 100)}`;
+        comparePrice.style.display = 'inline';
+      } else {
+        discountBadge.style.display = 'none';
+        comparePrice.style.display = 'none';
+      }
+      
+      currentPrice.textContent = `₪${Math.floor(variant.price / 100)}`;
+    }
+
+    function closePopup() {
+      popup.classList.remove('active');
+      document.body.style.overflow = '';
+      currentProduct = null;
+      selectedVariant = null;
+    }
+
+    async function addToCart() {
+      if (!selectedVariant) return;
+      
+      if (window.cartDrawer && window.cartDrawer.addItem) {
+        const success = await window.cartDrawer.addItem(selectedVariant.id, 1);
+        if (success) {
+          closePopup();
+        }
+      }
+    }
+
+    // Wait for cart drawer to be ready
+    function waitForCartDrawer() {
+      if (window.cartDrawer && window.cartDrawer.updateUI) {
+        window.cartDrawer.loadCart();
+      } else {
+        setTimeout(waitForCartDrawer, 100);
+      }
+    }
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', waitForCartDrawer);
+    } else {
+      waitForCartDrawer();
+    }
+
+    if (popupOverlay) popupOverlay.addEventListener('click', closePopup);
+    if (popupClose) popupClose.addEventListener('click', closePopup);
+    if (popupAddBtn) popupAddBtn.addEventListener('click', addToCart);
+    
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && popup.classList.contains('active')) {
+        closePopup();
+      }
+    });
+  });
+  </script>
+{% endif %}
